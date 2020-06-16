@@ -2,8 +2,10 @@
 A simple telegram bot to track stock portfolio in Bovespa.
 
 ## Installation
-First you'll need to create the bot using Telegram's [BotFather](https://t.me/botfather) to get a token.
+First you'll need to create the bot using Telegram's [BotFather](https://t.me/botfather) to get a token. Then edit 
+`finbot/finbot.py` with your bot's token.g
 
+## Usage
 The bot have a few commands:
 1. */price <STOCK_CODE>*: fetch the current price
 2. */buy <STOCK_CODE> <QUANTITY> <PRICE>*: adds a certain quantity of stocks to the user portfolio

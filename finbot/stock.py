@@ -71,25 +71,23 @@ class Stock:
         if time.time() - self.last_update < self.max_cache_time:
             return
 
-        url = f'https://finance.google.com/finance?q={self.code}&output=json'
+        url = f'https://mfinance.com.br/api/v1/stocks/{self.code}'
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as rsp:
                 if rsp.status in (200,):
                     text = await rsp.text()
-                    # The Google API always start with "\n//" when the stock exist in their database
-                    if text.startswith("\n//"):
-                        self._is_valid = True
-                        # Decode the json, we remove some heading and trailing characters
-                        fin_data = json.loads(text[6:-2])
+                    self._is_valid = True
+                    # Decode the json, we remove some heading and trailing characters
+                    fin_data = json.loads(text)
 
-                        # We divide change to keep this percentage consistent with the rest of the code (i.e. each
-                        # percent accounting for 0.01, e.g. 10% = 0.10)
-                        self._price = float(fin_data['l'])
-                        self._change = float(fin_data['cp'])/100
+                    # We divide change to keep this percentage consistent with the rest of the code (i.e. each
+                    # percent accounting for 0.01, e.g. 10% = 0.10)
+                    self._price = float(fin_data['lastPrice'])
+                    self._change = float(fin_data['change'])
 
-                        self.last_update = time.time()
-                    else:
-                        self._is_valid = False
+                    self.last_update = time.time()
+                else:
+                    self._is_valid = False
 
     def _update(self):
         """Drive the update coroutine."""

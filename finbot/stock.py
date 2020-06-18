@@ -80,8 +80,6 @@ class Stock:
                     # Decode the json, we remove some heading and trailing characters
                     fin_data = json.loads(text)
 
-                    # We divide change to keep this percentage consistent with the rest of the code (i.e. each
-                    # percent accounting for 0.01, e.g. 10% = 0.10)
                     self._price = float(fin_data['lastPrice'])
                     self._change = float(fin_data['change'])
 

@@ -1,22 +1,6 @@
-import json
-
 import pytest
+from aioresponses import aioresponses
 from finbot.stock import Stock
-
-
-class MockResponse:
-    def __init__(self, text, status):
-        self._text = text
-        self.status = status
-
-    async def text(self):
-        return self._text
-
-    async def __aexit__(self, exc_type, exc, tb):
-        pass
-
-    async def __aenter__(self):
-        return self
 
 
 @pytest.mark.parametrize(argnames='avg_price, expected_avg_price', argvalues=[
@@ -53,39 +37,38 @@ def test__add__empty_stock(quantity, avg_price, expected_avg_price):
     assert stock.avg_price == expected_avg_price
 
 
-@pytest.mark.parametrize(argnames='status', argvalues=[200])
-def test_update_valid_stocks(monkeypatch, status):
-    data = {
-        "change": 0,
-        "closingPrice": 18.2,
-        "eps": 2.17,
-        "high": 18.37,
-        "lastPrice": 18.2,
-        "lastYearHigh": 23.32,
-        "lastYearLow": 13.19,
-        "low": 18.02,
-        "marketCap": 11044677633,
-        "name": "EDP Energias do Brasil SA",
-        "pe": 8.4,
-        "priceOpen": 18.13,
-        "shares": 606850394,
-        "symbol": "ENBR3",
-        "volume": 4321600,
-        "volumeAvg": 2530250,
-        "sector": "Utilidade Pública",
-        "subSector": "Energia Elétrica",
-        "segment": "Energia Elétrica"
-    }
+@pytest.mark.parametrize(argnames='status', argvalues=[200, 404])
+def test_update_valid_stocks_integration(status):
+    stock = Stock(code='EGIE3')
 
-    resp = MockResponse(json.dumps(data), status)
+    with aioresponses() as mocked:
+        mocked.get(
+            f'https://mfinance.com.br/api/v1/stocks/EGIE3',
+            status=status,
+            payload={
+                "change": 0,
+                "closingPrice": 18.2,
+                "eps": 2.17,
+                "high": 18.37,
+                "lastPrice": 18.2,
+                "lastYearHigh": 23.32,
+                "lastYearLow": 13.19,
+                "low": 18.02,
+                "marketCap": 11044677633,
+                "name": "EDP Energias do Brasil SA",
+                "pe": 8.4,
+                "priceOpen": 18.13,
+                "shares": 606850394,
+                "symbol": "ENBR3",
+                "volume": 4321600,
+                "volumeAvg": 2530250,
+                "sector": "Utilidade Pública",
+                "subSector": "Energia Elétrica",
+                "segment": "Energia Elétrica"
+            })
 
-    monkeypatch.setattr('aiohttp.ClientSession.post', resp)
-
-    stock = Stock(code='ENBR3')
-
-    if status == 200:
-        assert stock.price == 18.2
-        assert stock.is_valid is True
-    else:
-        assert stock.is_valid is False
-
+        if status == 200:
+            assert stock.is_valid is True
+            assert stock.price == 18.2
+        elif status == 404:
+            assert stock.is_valid is False

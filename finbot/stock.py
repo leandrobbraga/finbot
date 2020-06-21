@@ -41,6 +41,9 @@ class Stock:
         self.avg_price = float(initial_price)
         self.max_cache_time = max_cache_time
 
+        self._price = None
+        self._change = None
+
     @property
     def value(self) -> float:
         """Value of all stocks."""
@@ -61,7 +64,7 @@ class Stock:
         """Return true if the stock exist, false otherwise. Source: https://finance.google.com/"""
         return self._is_valid
 
-    async def update_task(self) -> None:
+    async def update_task(self):
         """Fetch asynchronously all the information from the stock.
 
         Note:
@@ -74,7 +77,7 @@ class Stock:
         url = f'https://mfinance.com.br/api/v1/stocks/{self.code}'
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as rsp:
-                if rsp.status in (200,):
+                if rsp.status == 200:
                     text = await rsp.text()
                     self._is_valid = True
                     # Decode the json, we remove some heading and trailing characters
@@ -103,9 +106,13 @@ class Stock:
             TypeError: if you didn't add two Stock objects with the same code (e.g. Stock('BBAS3') + Stock('ITSA3')
             would result in TypeError"""
         if self.code == other.code and isinstance(other, Stock):
-            self.avg_price = ((self.avg_price * self.quantity) + (other.avg_price * other.quantity)) \
-                             / (self.quantity + other.quantity)
-            self.quantity += other.quantity
+            sum_quantity = self.quantity + other.quantity
+            if sum_quantity == 0:
+                self.avg_price = 0
+            else:
+                self.avg_price = ((self.avg_price * self.quantity) + (other.avg_price * other.quantity)) / sum_quantity
+
+            self.quantity = sum_quantity
             return self
         else:
             raise TypeError(f"You're trying to add Stocks from different companies ({self.code} and {other.code})")
